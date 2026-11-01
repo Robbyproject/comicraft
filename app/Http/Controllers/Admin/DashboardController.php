@@ -65,7 +65,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * Simpan unggahan gambar baru ke disk public dan hapus file lama bila diganti.
+     * Simpan unggahan gambar baru ke disk merchandise yang dikonfigurasi.
      *
      * @param  array<string, mixed>  $attributes
      * @return array<string, mixed>
@@ -76,7 +76,8 @@ class DashboardController extends Controller
             return $attributes;
         }
 
-        $path = $request->file('image')->store('merchandise-images', 'public');
+        $disk = config('filesystems.merchandise_disk', 'public');
+        $path = $request->file('image')->store('merchandise-images', $disk);
 
         if ($path === false) {
             throw new RuntimeException('Failed to store merchandise image.');
@@ -258,8 +259,10 @@ class DashboardController extends Controller
 
         $merchandise->update($validated);
 
-        if ($oldImage && $oldImage !== $merchandise->image && Storage::disk('public')->exists($oldImage)) {
-            Storage::disk('public')->delete($oldImage);
+        $disk = Storage::disk(config('filesystems.merchandise_disk', 'public'));
+
+        if ($oldImage && $oldImage !== $merchandise->image && $disk->exists($oldImage)) {
+            $disk->delete($oldImage);
         }
 
         return redirect()->route('admin.merchandises')
@@ -273,8 +276,10 @@ class DashboardController extends Controller
         $image = $merch->image;
         $merch->delete();
 
-        if ($image && Storage::disk('public')->exists($image)) {
-            Storage::disk('public')->delete($image);
+        $disk = Storage::disk(config('filesystems.merchandise_disk', 'public'));
+
+        if ($image && $disk->exists($image)) {
+            $disk->delete($image);
         }
 
         return back()->with('success', "Merchandise '{$name}' berhasil dihapus.");

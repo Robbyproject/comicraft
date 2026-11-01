@@ -34,29 +34,31 @@ class Merchandise extends Model
     }
 
     /**
-     * URL gambar merchandise:
-     * 1. Mengambil file upload admin dari storage
-     * 2. Atau file publik lokal
-     * 3. Atau fallback gambar anime otomatis agar katalog tidak pernah abu-abu kosong
-     */
-    /**
-     * URL foto asli merchandise dari storage atau file lokal.
+     * Return the merchandise image URL from its configured storage disk.
      */
     public function imageUrl(): ?string
     {
-        // 1. Jika ada foto hasil upload admin di storage
-        if ($this->image && Storage::disk('public')->exists($this->image)) {
-            return Storage::url($this->image);
+        if (! $this->image) {
+            return null;
         }
 
-        // 2. Jika path foto ada di folder public/images/...
-        if ($this->image && file_exists(public_path($this->image))) {
-            return asset($this->image);
-        }
-
-        // 3. Jika image berisi URL eksternal langsung (http/https)
-        if ($this->image && str_starts_with($this->image, 'http')) {
+        if (str_starts_with($this->image, 'http://') || str_starts_with($this->image, 'https://')) {
             return $this->image;
+        }
+
+        $diskName = config('filesystems.merchandise_disk', 'public');
+        $disk = Storage::disk($diskName);
+
+        if (config("filesystems.disks.{$diskName}.driver") === 's3') {
+            return $disk->url($this->image);
+        }
+
+        if ($disk->exists($this->image)) {
+            return $disk->url($this->image);
+        }
+
+        if (file_exists(public_path($this->image))) {
+            return asset($this->image);
         }
 
         return null;
