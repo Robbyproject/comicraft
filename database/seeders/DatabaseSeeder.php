@@ -23,10 +23,10 @@ class DatabaseSeeder extends Seeder
             'phone_number' => '081234567890',
         ]);
 
-        // 2. Akun Buyer (Pengunjung / Wibu)
+        // 2. Akun Buyer untuk demonstrasi
         $buyer = User::create([
-            'name' => 'Robby Fabian (Buyer)',
-            'email' => 'buyer@comicraft.test',
+            'name' => 'Nadeshiko',
+            'email' => 'nadeshiko@gmail.com',
             'password' => Hash::make('password123'),
             'role' => 'buyer',
             'phone_number' => '089876543210',

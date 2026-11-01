@@ -1,58 +1,242 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# ComiCraft
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+ComiCraft adalah aplikasi web untuk katalog merchandise fanart, pre-order, dukungan pelanggan, dan pengelolaan booth kreator pada event konvensi.
 
-## About Laravel
+## Dokumentasi
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Dokumentasi proyek tersedia sebagai file terpisah di [`docs/`](docs/), dan ringkasan utamanya juga ditampilkan di README ini.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+| Dokumen | Isi |
+| --- | --- |
+| [ERD](docs/erd.md) | Entitas, atribut penting, dan relasi database |
+| [Flow aplikasi](docs/flow.md) | Alur buyer, creator, pre-order, dan booth |
+| [Roles](docs/roles.md) | Hak akses buyer dan creator |
+| [Struktur proyek](docs/structure.md) | Lokasi kode utama dan tanggung jawabnya |
+| [Troubleshooting](docs/troubleshooting.md) | Masalah umum saat development dan deployment |
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Fitur utama
 
-## Learning Laravel
+- Autentikasi dan redirect berdasarkan peran pengguna.
+- Katalog merchandise berdasarkan fandom dan showcase karakter.
+- Pre-order dengan kuota produksi, pilihan pembayaran penuh atau DP, metode pengambilan, dan PIN serah-terima.
+- Dashboard creator untuk merchandise, pesanan, tiket bantuan, booth event, serta transaksi.
+- Penyimpanan gambar merchandise dapat menggunakan Supabase Storage; konfigurasi default development tetap memakai disk lokal.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## ERD
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+```mermaid
+erDiagram
+    USERS {
+        bigint id PK
+        string name
+        string email UK
+        string password
+        enum role
+        string phone_number
+        string avatar
+    }
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+    FANDOM_CATEGORIES {
+        bigint id PK
+        string name
+        string slug UK
+        string banner
+    }
 
-## Agentic Development
+    MERCHANDISES {
+        bigint id PK
+        bigint fandom_category_id FK
+        string name
+        enum item_type
+        uint price
+        uint stock_quota
+        string image
+    }
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+    PREORDERS {
+        bigint id PK
+        string preorder_code UK
+        string pickup_secret_pin
+        bigint user_id FK
+        bigint merchandise_id FK
+        uint quantity
+        uint total_price
+        enum pickup_method
+        string tracking_number
+        enum payment_scheme
+        uint amount_paid
+        uint remaining_balance
+        uint platform_fee
+        uint net_creator_income
+        enum payment_status
+        enum status
+    }
 
-```bash
-composer require laravel/boost --dev
+    SUPPORT_MESSAGES {
+        bigint id PK
+        bigint user_id FK
+        bigint preorder_id FK
+        string subject
+        text message
+        text admin_reply
+        enum status
+    }
 
-php artisan boost:install
+    CONVENTION_EVENTS {
+        bigint id PK
+        string name
+        string venue
+        date event_date
+        enum status
+    }
+
+    BOOTH_RENTALS {
+        bigint id PK
+        string invoice_number UK
+        bigint convention_event_id FK
+        bigint creator_id FK
+        string circle_name
+        string booth_number
+        enum booth_type
+        uint base_price
+        uint platform_fee
+        uint total_rental_cost
+        string payment_method
+        enum rental_status
+        timestamp paid_at
+    }
+
+    USERS ||--o{ PREORDERS : creates
+    MERCHANDISES ||--o{ PREORDERS : ordered_as
+    FANDOM_CATEGORIES ||--o{ MERCHANDISES : groups
+    USERS ||--o{ SUPPORT_MESSAGES : opens
+    PREORDERS o|--o{ SUPPORT_MESSAGES : related_to
+    CONVENTION_EVENTS ||--o{ BOOTH_RENTALS : offers
+    USERS o|--o{ BOOTH_RENTALS : rents
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+`image`, `avatar`, dan `banner` menyimpan path atau URL file, bukan isi biner gambar. Database queue/cache (`jobs`, `failed_jobs`, `cache`, dan `sessions`) merupakan tabel infrastruktur Laravel dan tidak ditampilkan dalam ERD domain.
 
-## Contributing
+## Flow aplikasi
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```mermaid
+flowchart TD
+    A[Pengunjung] --> B[Login atau daftar]
+    B --> C{Peran akun}
+    C -->|Buyer| D[Katalog dan showcase]
+    D --> E[Pilih merchandise]
+    E --> F[Isi jumlah, pembayaran, dan pickup]
+    F --> G[Pre-order dibuat]
+    G --> H[Tiket pesanan dengan kode dan PIN]
+    H --> I{Pesanan dikirim atau pickup booth?}
+    I -->|Shipping| J[Creator mengisi nomor resi]
+    I -->|Pickup booth| K[Buyer menunjukkan PIN]
+    J --> L[Creator menyelesaikan pesanan]
+    K --> L
+    L --> M[Status dana simulasi dirilis]
+    D --> N[Buyer dapat mengirim tiket bantuan]
+    N --> O[Creator membalas dari inbox support]
+    C -->|Creator| P[Dashboard creator]
+    P --> Q[Kelola kategori dan merchandise]
+    P --> R[Kelola pesanan dan kuota]
+    P --> S[Kelola booth event dan transaksi]
+```
 
-## Code of Conduct
+> **Catatan pembayaran:** status escrow dan pembayaran pada aplikasi adalah simulasi untuk demonstrasi. Belum ada payment gateway yang memproses uang sungguhan.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Roles dan akses
 
-## Security Vulnerabilities
+| Peran | Akses utama |
+| --- | --- |
+| Guest | Beranda, login, dan registrasi |
+| Buyer | Katalog, showcase, profil, pre-order milik sendiri, pesanan sendiri, dan tiket bantuan |
+| Creator | Semua akses buyer serta dashboard, CRUD merchandise/kategori, manajemen pesanan, balasan support, booking booth, dan transaksi |
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Route buyer memerlukan autentikasi. Route dashboard menggunakan middleware `role:creator`; buyer yang mencoba mengaksesnya akan ditolak dengan HTTP 403. Detailnya ada di [docs/roles.md](docs/roles.md).
 
-## License
+## Akun uji coba
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Akun berikut disediakan oleh `DatabaseSeeder` untuk **demonstrasi lokal/tugas**:
+
+| Peran | Email | Password |
+| --- | --- | --- |
+| Creator | `creator@comicraft.test` | `password123` |
+| Buyer | `nadeshiko@gmail.com` | `password123` |
+
+Untuk database development yang masih kosong, jalankan:
+
+```bash
+php artisan migrate:fresh --seed
+```
+
+> Perintah tersebut menghapus seluruh tabel dan data database aktif sebelum membuat ulang data. Jangan gunakan pada database deployment yang berisi data yang ingin dipertahankan. Untuk database yang sudah ada, buat/ubah akun demo secara aman melalui dashboard/admin atau prosedur database yang sesuai—jangan mengandalkan menjalankan seeder berulang kali.
+
+Kredensial ini bersifat publik untuk tugas/demo. Jangan gunakan password tersebut untuk akun atau deployment publik; ganti atau hapus akun demo sebelum aplikasi dibuka untuk umum.
+
+## Menjalankan secara lokal
+
+Persyaratan dasar: PHP `^8.3`, Composer, Node.js/npm, dan database yang didukung konfigurasi Laravel.
+
+```bash
+composer install
+Copy-Item .env.example .env
+php artisan key:generate
+php artisan migrate:fresh --seed
+npm install
+npm run build
+composer run dev
+```
+
+Di PowerShell Windows, `Copy-Item` menyalin `.env.example` menjadi `.env`. Sesuaikan koneksi database di `.env` sebelum migrasi bila tidak menggunakan default proyek. `migrate:fresh` menghapus tabel aplikasi, jadi gunakan hanya untuk database development yang boleh di-reset.
+
+## Supabase Storage untuk gambar merchandise
+
+Proyek mendukung disk `supabase` khusus gambar merchandise. Avatar tetap memakai disk `public` lokal. Untuk memakai Supabase:
+
+1. Buat bucket Supabase Storage dan atur **Public** jika gambar katalog harus dapat dilihat tanpa login.
+2. Salin endpoint, region, dan S3 access keys dari halaman **Storage → Settings → S3 Connection**.
+3. Simpan nilai berikut sebagai environment variables/secrets pada hosting (jangan commit nilai rahasia):
+
+   ```text
+   MERCHANDISE_DISK=supabase
+   SUPABASE_S3_ACCESS_KEY_ID=
+   SUPABASE_S3_SECRET_ACCESS_KEY=
+   SUPABASE_S3_REGION=
+   SUPABASE_S3_BUCKET=
+   SUPABASE_S3_ENDPOINT=
+   SUPABASE_STORAGE_PUBLIC_URL=
+   ```
+
+4. `SUPABASE_STORAGE_PUBLIC_URL` adalah URL dasar bucket publik, dengan format `https://<project-ref>.supabase.co/storage/v1/object/public/<bucket>`.
+5. Redeploy aplikasi dan upload ulang file lama yang belum ada di bucket.
+
+Template nama variabel juga tersedia di [.env.example](.env.example). Jangan masukkan access key atau secret ke repository, README, atau frontend.
+
+## Struktur utama
+
+```text
+app/
+  Http/Controllers/     Controller buyer, auth, profile, dan creator
+  Http/Middleware/      Middleware role
+  Models/               Model Eloquent dan relasi
+config/                 Konfigurasi aplikasi, database, dan filesystem
+database/
+  migrations/           Skema database
+  seeders/              Data demo
+resources/views/        Blade views buyer, creator, auth, dan komponen
+routes/web.php          Route aplikasi
+tests/Feature/          Tes fitur dan alur HTTP
+docs/                   Dokumentasi teknis proyek
+```
+
+## Testing
+
+```bash
+php artisan test --compact
+```
+
+Tes menggunakan PHPUnit. Lihat [docs/troubleshooting.md](docs/troubleshooting.md) untuk catatan pemecahan masalah. Untuk susunan file yang lebih lengkap, lihat [docs/structure.md](docs/structure.md).
+
+## Lisensi
+
+Proyek ini menggunakan kerangka Laravel. Lisensi dan atribusi komponen pihak ketiga mengikuti lisensi masing-masing dependency yang tercantum di Composer/npm.

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -93,6 +94,23 @@ class AuthFlowTest extends TestCase
                 'email' => $creator->email,
                 'password' => 'rahasia123',
             ])->assertRedirect(route('admin.dashboard'));
+    }
+
+    public function test_seeded_demo_accounts_can_log_in_with_documented_credentials(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $this->post(route('login.submit'), [
+            'email' => 'creator@comicraft.test',
+            'password' => 'password123',
+        ])->assertRedirect(route('admin.dashboard'));
+
+        $this->post(route('logout'))->assertRedirect(route('home'));
+
+        $this->post(route('login.submit'), [
+            'email' => 'nadeshiko@gmail.com',
+            'password' => 'password123',
+        ])->assertRedirect(route('katalog'));
     }
 
     public function test_logged_in_user_can_logout(): void
