@@ -13,6 +13,12 @@ return new class extends Migration
     {
         Schema::create('merchandises', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('fandom_category_id')->constrained('fandom_categories')->cascadeOnDelete();
+            $table->string('name');
+            $table->enum('item_type', ['acrylic_stand', 'keychain', 'photocard', 'art_print']);
+            $table->unsignedInteger('price');
+            $table->unsignedInteger('stock_quota');
+            $table->string('image')->nullable();
             $table->timestamps();
         });
     }

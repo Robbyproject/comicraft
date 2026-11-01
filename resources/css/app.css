@@ -1,9 +1,54 @@
-@import 'tailwindcss';
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
+/* Panggil Font Nohemi dari folder public/fonts/ */
+@font-face {
+  font-family: 'Nohemi';
+  src: url('/fonts/Nohemi-Bold.woff2') format('woff2'),
+       url('/fonts/Nohemi-Bold.ttf') format('truetype'),
+       url('/fonts/Nohemi-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nohemi';
+  src: url('/fonts/Nohemi-Regular.woff2') format('woff2'),
+       url('/fonts/Nohemi-Regular.ttf') format('truetype'),
+       url('/fonts/Nohemi-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-nohemi: 'Nohemi', 'Plus Jakarta Sans', sans-serif;
+  --font-jakarta: 'Plus Jakarta Sans', sans-serif;
+  --color-midnight: #010310;
+  --color-chrysocolla: #23A9BD;
+  --color-cream: #F8F9FA;
+}
+
+body {
+  font-family: var(--font-jakarta);
+  background-color: #F8F9FA;
+  color: #010310;
+}
+
+.font-nohemi {
+  font-family: 'Nohemi', 'Plus Jakarta Sans', sans-serif;
+}
+
+.font-jakarta {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* Hilangkan tampilan scrollbar agar visual bersih */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

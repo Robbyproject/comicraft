@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Blue Archive - Midori Live2D</title>
+
+    <!-- 1. KUNCI SKALA 0.32 & POSISI IBUKI/MIDORI PERMANEN KE LOCALSTORAGE -->
+    <script>
+      const midoriConfig = {
+        "autoTalk": false,
+        "bgmVolume": 0,
+        "fontSize": 18,
+        "language": "ch",
+        "mirror": false,
+        "mouseTracking": false,
+        "mouseTrial": false,
+        "panelDisplay": false,
+        "penetration": false,
+        "position": { "x": 699, "y": 579 },
+        "rotation": 0,
+        "scale": 0.32,
+        "talkVolume": 0,
+        "talking": false,
+        "talkingInterval": 0,
+        "textPointX": 100,
+        "textPointY": 100,
+        "textureResolution": "2k"
+      };
+      localStorage.setItem('Ibuki_home', JSON.stringify(midoriConfig));
+
+      // Matikan pelacakan kursor & klik splash
+      window.addEventListener('mousemove', (e) => e.stopImmediatePropagation(), true);
+      window.addEventListener('pointermove', (e) => e.stopImmediatePropagation(), true);
+      window.addEventListener('mousedown', (e) => e.stopImmediatePropagation(), true);
+      window.addEventListener('pointerdown', (e) => e.stopImmediatePropagation(), true);
+      window.addEventListener('click', (e) => e.stopImmediatePropagation(), true);
+      window.addEventListener('touchstart', (e) => e.stopImmediatePropagation(), true);
+    </script>
+
+    <script type="module" crossorigin src="./assets/index.e2ce666a.js"></script>
+    <link rel="stylesheet" href="./assets/index.b5021dcf.css">
+
+    <style>
+      html, body, #app {
+        margin: 0;
+        padding: 0;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        background-color: transparent !important;
+      }
+
+      canvas {
+        pointer-events: none !important;
+      }
+
+      /* Sembunyikan tombol setting & balon dialog */
+      button, input, p, span,
+      [class*="bubble"], [class*="dialog"], [class*="serifu"], [class*="setting"],
+      #app div:not(:has(canvas)) {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+  </body>
+</html>

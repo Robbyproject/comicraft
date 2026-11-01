@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Blue Archive - Yuuka Live2D</title>
+
+    <!-- 1. SCRIPT ANTI-CACHE & BERSIHKAN LOCALSTORAGE (Wajib agar setelan baru langsung aktif) -->
+    <script>
+      // Bersihkan memori settingan lama
+      try { localStorage.clear(); sessionStorage.clear(); } catch(e) {}
+
+      // Paksa browser selalu mengambil loadJson.json terbaru (Bypass Cache)
+      const origOpen = XMLHttpRequest.prototype.open;
+      XMLHttpRequest.prototype.open = function(method, url) {
+        if (url && typeof url === 'string' && url.includes('loadJson.json')) {
+          arguments[1] = url + (url.includes('?') ? '&' : '?') + 'nocache=' + Date.now();
+        }
+        return origOpen.apply(this, arguments);
+      };
+
+      // Matikan pelacakan kursor (trail)
+      window.addEventListener('mousemove', (e) => e.stopImmediatePropagation(), true);
+      window.addEventListener('pointermove', (e) => e.stopImmediatePropagation(), true);
+
+      // Blokir total klik & tap pada layar
+      window.addEventListener('mousedown', (e) => e.stopImmediatePropagation(), true);
+      window.addEventListener('pointerdown', (e) => e.stopImmediatePropagation(), true);
+      window.addEventListener('click', (e) => e.stopImmediatePropagation(), true);
+      window.addEventListener('touchstart', (e) => e.stopImmediatePropagation(), true);
+    </script>
+
+    <script type="module" crossorigin src="./assets/index-DTe2DjKZ.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CnNjMcLE.css">
+
+    <style>
+      html, body, #app {
+        margin: 0;
+        padding: 0;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        background-color: #0f111a !important;
+      }
+
+      canvas {
+        pointer-events: none !important;
+      }
+
+      /* Matikan overlay loading */
+      img, [class*="loading"], [id*="loading"] {
+        display: none !important;
+      }
+
+      /* Sembunyikan tombol setting & dialog */
+      button, input, p, span,
+      [class*="bubble"], [class*="dialog"], [class*="serifu"], [class*="setting"],
+      #app div:not(:has(canvas)) {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+  </body>
+</html>
