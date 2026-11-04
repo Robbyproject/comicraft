@@ -35,11 +35,11 @@ docs/                          Dokumentasi teknis
 
 ## Domain model utama
 
-- `User`: akun, role, profil, dan avatar.
+- `User`: akun, role, profil, avatar, merchandise milik creator, pesanan buyer, dan tiket yang dikirim/diterima.
 - `FandomCategory`: kategori fandom serta banner.
-- `Merchandise`: item katalog, harga, kuota, dan path gambar.
+- `Merchandise`: item katalog publik milik satu creator, harga, kuota, dan path gambar.
 - `Preorder`: transaksi pemesanan, pembayaran simulasi, status produksi, dan pengambilan.
-- `SupportMessage`: tiket bantuan buyer dan balasan creator.
+- `SupportMessage`: tiket bantuan buyer yang dialamatkan ke creator dan balasannya.
 - `ConventionEvent`: data event konvensi.
 - `BoothRental`: inventaris booth dan booking creator.
 

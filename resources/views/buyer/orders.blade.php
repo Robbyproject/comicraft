@@ -93,7 +93,7 @@
                     <!-- Tombol Bantuan CS untuk Tiket Ini -->
                     <div class="mt-3 pt-3 border-t border-[#010310]/10 flex items-center justify-between text-[11px]">
                         <span class="text-[#010310]/50 text-[10px]">{{ $order->pickup_method === 'booth_pickup' ? '📍 Booth #B-12' : '🚚 Ekspedisi' }}</span>
-                        <a href="{{ route('support.create') }}" class="text-[#23A9BD] font-bold hover:underline">
+                        <a href="{{ route('support.create', ['preorder_id' => $order->id]) }}" class="text-[#23A9BD] font-bold hover:underline">
                             Laporkan Kendala 💬
                         </a>
                     </div>
@@ -109,6 +109,45 @@
                 </div>
             @endforelse
         </div>
+
+        <section class="bg-white border-[1.5px] border-[#010310] rounded-2xl p-4 sm:p-5 shadow-[2.5px_2.5px_0px_#010310]">
+            <div class="mb-3">
+                <h2 class="font-nohemi font-bold text-lg text-[#010310]">Tiket Bantuan Saya</h2>
+                <p class="text-[11px] text-[#010310]/60">Hanya tiket yang kamu kirim yang ditampilkan di sini.</p>
+            </div>
+
+            <div class="space-y-3">
+                @forelse($supportTickets as $ticket)
+                    <article class="rounded-xl border border-[#010310]/15 bg-[#F8F9FA] p-3">
+                        <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                                <h3 class="text-sm font-bold text-[#010310]">{{ $ticket->subject }}</h3>
+                                <p class="mt-0.5 text-[10px] text-[#010310]/55">
+                                    Tujuan: {{ $ticket->creator?->name ?? 'Creator tidak tersedia' }}
+                                    • {{ $ticket->created_at->format('d/m/Y H:i') }}
+                                </p>
+                            </div>
+                            <span class="w-fit rounded-full border border-[#010310] px-2.5 py-0.5 text-[9px] font-extrabold uppercase
+                                {{ $ticket->status === 'resolved' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' }}">
+                                {{ $ticket->status === 'resolved' ? 'Sudah Dibalas' : 'Menunggu Balasan' }}
+                            </span>
+                        </div>
+                        <p class="mt-2 whitespace-pre-line text-[11px] text-[#010310]/80">{{ $ticket->message }}</p>
+                        @if($ticket->admin_reply)
+                            <div class="mt-2 rounded-lg border border-[#23A9BD]/30 bg-white p-2.5">
+                                <p class="text-[9px] font-extrabold uppercase text-[#23A9BD]">Balasan Creator</p>
+                                <p class="mt-1 whitespace-pre-line text-[11px] text-[#010310]/80">{{ $ticket->admin_reply }}</p>
+                            </div>
+                        @endif
+                    </article>
+                @empty
+                    <p class="rounded-xl border border-dashed border-[#010310]/20 p-5 text-center text-xs text-[#010310]/55">
+                        Kamu belum mengirim tiket bantuan.
+                        <a href="{{ route('support.create') }}" class="font-bold text-[#23A9BD] hover:underline">Kirim tiket</a>
+                    </p>
+                @endforelse
+            </div>
+        </section>
 
     </main>
 

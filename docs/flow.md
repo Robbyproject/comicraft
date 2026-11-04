@@ -15,7 +15,7 @@
 3. Aplikasi memeriksa kuota yang tersisa berdasarkan pesanan yang belum dibatalkan.
 4. Aplikasi menghitung total, jumlah pembayaran, sisa pembayaran, fee platform 1.5%, dan pendapatan bersih creator.
 5. Pesanan dibuat dengan kode PO dan PIN pickup enam digit.
-6. Buyer melihat daftar pesanan dan dapat membuat tiket bantuan yang terkait dengan PO miliknya.
+6. Buyer melihat pesanan dan tiket bantuan miliknya sendiri. Tiket yang terkait PO hanya dapat dikirim untuk PO buyer tersebut dan otomatis masuk ke creator pemilik produk. Untuk tiket umum tanpa PO, buyer memilih creator tujuan.
 7. Creator mengubah status produksi melalui dashboard.
 8. Untuk menyelesaikan pickup booth, creator memverifikasi PIN. Untuk shipping, nomor resi harus tersedia.
 9. Status pembayaran simulasi berubah menjadi `released_to_creator` setelah pesanan diselesaikan.
@@ -30,10 +30,18 @@ Pesanan dapat menjadi `cancelled`; status ini tidak lagi menggunakan kuota produ
 
 ## Bantuan pelanggan
 
-1. Buyer mengirim tiket dengan subjek, pesan, dan pilihan PO opsional.
+1. Buyer mengirim tiket dengan subjek, pesan, serta memilih PO miliknya atau creator tujuan untuk pertanyaan umum.
 2. Server memvalidasi bahwa PO yang dilampirkan memang milik buyer yang login.
-3. Tiket dibuat dengan status `waiting_reply`.
-4. Creator membalas dari halaman support; status menjadi `resolved`.
+3. Jika PO dipilih, server menentukan creator tujuan dari pemilik merchandise, bukan dari input buyer.
+4. Tiket dibuat dengan status `waiting_reply` dan hanya terlihat oleh creator tujuan.
+5. Creator tujuan membalas dari halaman support; status menjadi `resolved`.
+
+## Kepemilikan data
+
+- Buyer hanya dapat melihat pesanan dan tiket yang dibuat oleh akun sendiri.
+- Creator hanya dapat mengelola merchandise miliknya, pesanan dari produk tersebut, tiket yang ditujukan kepadanya, dan transaksi/booking booth miliknya.
+- Katalog buyer dan kategori fandom tetap bersama agar produk semua creator dapat ditemukan di satu marketplace.
+- Migrasi ownership mengalihkan merchandise lama dan tiket umum ke creator paling awal yang sudah ada; tiket yang terkait PO mengikuti creator pemilik merchandise.
 
 ## Booking booth
 

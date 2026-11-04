@@ -115,29 +115,175 @@ class BuyerPreorderFlowTest extends TestCase
         $this->assertSame(10, $merchandise->available_quota);
     }
 
-    private function createBuyer(): User
+    public function test_buyer_only_sees_its_own_orders_and_support_form_order_choices(): void
+    {
+        $buyer = $this->createBuyer();
+        $otherBuyer = $this->createBuyer('other-buyer@comicraft.test');
+        $merchandise = $this->createMerchandise();
+        $order = $this->createPreorder($buyer, $merchandise, 'PO-BUYERONE');
+        $otherOrder = $this->createPreorder($otherBuyer, $merchandise, 'PO-BUYERTWO');
+        $ownTicket = $buyer->supportMessages()->create([
+            'creator_id' => $merchandise->creator_id,
+            'preorder_id' => $order->id,
+            'subject' => 'My private ticket',
+            'message' => 'Only I should see this ticket.',
+            'status' => 'waiting_reply',
+        ]);
+        $otherTicket = $otherBuyer->supportMessages()->create([
+            'creator_id' => $merchandise->creator_id,
+            'preorder_id' => $otherOrder->id,
+            'subject' => 'Another buyer private ticket',
+            'message' => 'This ticket belongs to another buyer.',
+            'status' => 'waiting_reply',
+        ]);
+
+        $this->actingAs($buyer)
+            ->get(route('buyer.orders'))
+            ->assertOk()
+            ->assertSee($order->preorder_code)
+            ->assertDontSee($otherOrder->preorder_code)
+            ->assertSee('Tiket Bantuan Saya')
+            ->assertSee($ownTicket->subject)
+            ->assertDontSee($otherTicket->subject);
+
+        $this->get(route('support.create'))
+            ->assertOk()
+            ->assertSee($order->preorder_code)
+            ->assertDontSee($otherOrder->preorder_code);
+    }
+
+    public function test_buyer_support_ticket_for_a_preorder_is_routed_to_its_product_creator(): void
+    {
+        $buyer = $this->createBuyer();
+        $creator = $this->createCreator();
+        $otherCreator = $this->createCreator('other-creator@comicraft.test');
+        $merchandise = $this->createMerchandise(creator: $creator);
+        $order = $this->createPreorder($buyer, $merchandise, 'PO-SUPPORTONE');
+
+        $this->actingAs($buyer)
+            ->post(route('support.store'), [
+                'preorder_id' => $order->id,
+                'creator_id' => $otherCreator->id,
+                'subject' => 'Question about my order',
+                'message' => 'Please check this order.',
+            ])
+            ->assertRedirect(route('support.create'));
+
+        $this->assertDatabaseHas('support_messages', [
+            'user_id' => $buyer->id,
+            'preorder_id' => $order->id,
+            'creator_id' => $creator->id,
+            'subject' => 'Question about my order',
+        ]);
+    }
+
+    public function test_buyer_can_route_general_support_ticket_to_a_selected_creator(): void
+    {
+        $buyer = $this->createBuyer();
+        $creator = $this->createCreator();
+
+        $this->actingAs($buyer)
+            ->post(route('support.store'), [
+                'creator_id' => $creator->id,
+                'subject' => 'General question',
+                'message' => 'I have a question for this creator.',
+            ])
+            ->assertRedirect(route('support.create'));
+
+        $this->assertDatabaseHas('support_messages', [
+            'user_id' => $buyer->id,
+            'preorder_id' => null,
+            'creator_id' => $creator->id,
+            'subject' => 'General question',
+        ]);
+    }
+
+    public function test_buyer_cannot_route_general_support_to_another_buyer_account(): void
+    {
+        $buyer = $this->createBuyer();
+        $otherBuyer = $this->createBuyer('other-buyer@comicraft.test');
+
+        $this->actingAs($buyer)
+            ->post(route('support.store'), [
+                'creator_id' => $otherBuyer->id,
+                'subject' => 'Invalid recipient',
+                'message' => 'Only creator accounts can receive tickets.',
+            ])
+            ->assertSessionHasErrors('creator_id');
+
+        $this->assertDatabaseMissing('support_messages', ['subject' => 'Invalid recipient']);
+    }
+
+    public function test_buyer_cannot_attach_another_buyers_preorder_to_support_ticket(): void
+    {
+        $buyer = $this->createBuyer();
+        $otherBuyer = $this->createBuyer('other-buyer@comicraft.test');
+        $creator = $this->createCreator();
+        $merchandise = $this->createMerchandise(creator: $creator);
+        $otherOrder = $this->createPreorder($otherBuyer, $merchandise, 'PO-OTHERBUYER');
+
+        $this->actingAs($buyer)
+            ->post(route('support.store'), [
+                'preorder_id' => $otherOrder->id,
+                'subject' => 'Unauthorized ticket',
+                'message' => 'This ticket must not be created.',
+            ])
+            ->assertNotFound();
+
+        $this->assertDatabaseMissing('support_messages', ['subject' => 'Unauthorized ticket']);
+    }
+
+    private function createBuyer(string $email = 'buyer@comicraft.test'): User
     {
         return User::create([
             'name' => 'Robby Fabian (Buyer)',
-            'email' => 'buyer@comicraft.test',
+            'email' => $email,
             'phone_number' => '081234567890',
             'password' => Hash::make('rahasia123'),
             'role' => 'buyer',
         ]);
     }
 
-    private function createMerchandise(int $price = 45000, int $stockQuota = 10): Merchandise
+    private function createCreator(string $email = 'creator@comicraft.test'): User
     {
+        return User::create([
+            'name' => 'ComiCraft Creator',
+            'email' => $email,
+            'phone_number' => '081234567891',
+            'password' => Hash::make('rahasia123'),
+            'role' => 'creator',
+        ]);
+    }
+
+    private function createMerchandise(
+        int $price = 45000,
+        int $stockQuota = 10,
+        ?User $creator = null,
+    ): Merchandise {
+        $creator ??= $this->createCreator();
         $category = FandomCategory::create([
             'name' => 'Honkai Star Rail',
             'slug' => 'honkai-star-rail',
         ]);
 
-        return $category->merchandises()->create([
+        return $creator->merchandises()->create([
+            'fandom_category_id' => $category->id,
             'name' => 'Shiroko Shanhaijing Art Print A4 Hologram',
             'item_type' => 'art_print',
             'price' => $price,
             'stock_quota' => $stockQuota,
+        ]);
+    }
+
+    private function createPreorder(User $buyer, Merchandise $merchandise, string $code): Preorder
+    {
+        return $merchandise->preorders()->create([
+            'user_id' => $buyer->id,
+            'preorder_code' => $code,
+            'quantity' => 1,
+            'total_price' => $merchandise->price,
+            'pickup_method' => 'booth_pickup',
+            'status' => 'pending',
         ]);
     }
 }

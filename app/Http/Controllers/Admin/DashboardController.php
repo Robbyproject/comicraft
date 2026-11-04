@@ -9,7 +9,9 @@ use App\Models\FandomCategory;
 use App\Models\Merchandise;
 use App\Models\Preorder;
 use App\Models\SupportMessage;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
@@ -19,16 +21,28 @@ use RuntimeException;
 
 class DashboardController extends Controller
 {
-    private function getSidebarData(): array
+    private function getSidebarData(User $creator): array
     {
-        $pendingTickets = SupportMessage::with('user')->where('status', 'waiting_reply')->latest()->take(3)->get();
-        $newOrders = Preorder::with(['user', 'merchandise'])->where('status', 'pending')->latest()->take(3)->get();
+        $pendingTickets = SupportMessage::forCreator($creator)
+            ->with('user')
+            ->where('status', 'waiting_reply')
+            ->latest()
+            ->take(3)
+            ->get();
+        $newOrders = Preorder::forCreator($creator)
+            ->with(['user', 'merchandise'])
+            ->where('status', 'pending')
+            ->latest()
+            ->take(3)
+            ->get();
 
         return [
-            'categories' => FandomCategory::with('merchandises')->get(),
-            'pendingSupportCount' => SupportMessage::where('status', 'waiting_reply')->count(),
+            'categories' => FandomCategory::with([
+                'merchandises' => fn (HasMany $query) => $query->whereBelongsTo($creator, 'creator'),
+            ])->get(),
+            'pendingSupportCount' => SupportMessage::forCreator($creator)->where('status', 'waiting_reply')->count(),
             'activeBooth' => BoothRental::with('event')
-                ->where('creator_id', auth()->id())
+                ->where('creator_id', $creator->id)
                 ->where('rental_status', 'paid_confirmed')
                 ->latest()
                 ->first(),
@@ -46,9 +60,10 @@ class DashboardController extends Controller
      *
      * @return Collection<int, Merchandise>
      */
-    private function merchandisesWithProductionStats(?int $categoryId = null): Collection
+    private function merchandisesWithProductionStats(User $creator, ?int $categoryId = null): Collection
     {
         return Merchandise::with('category')
+            ->whereBelongsTo($creator, 'creator')
             ->withCount([
                 'preorders as pending_orders_count' => fn (Builder $query) => $query->where('status', 'pending'),
                 'preorders as producing_orders_count' => fn (Builder $query) => $query->where('status', 'producing'),
@@ -91,20 +106,34 @@ class DashboardController extends Controller
     // 1. HALAMAN OVERVIEW
     public function index(Request $request)
     {
-        $sidebar = $this->getSidebarData();
-        $merchandises = $this->merchandisesWithProductionStats();
-        $preorders = Preorder::with(['user', 'merchandise.category'])->latest()->take(6)->get();
-        $supportMessages = SupportMessage::with(['user', 'preorder'])->latest()->take(4)->get();
+        $creator = $request->user();
+        $sidebar = $this->getSidebarData($creator);
+        $merchandises = $this->merchandisesWithProductionStats($creator);
+        $preorders = Preorder::forCreator($creator)
+            ->with(['user', 'merchandise.category'])
+            ->latest()
+            ->take(6)
+            ->get();
+        $supportMessages = SupportMessage::forCreator($creator)
+            ->with(['user', 'preorder'])
+            ->latest()
+            ->take(4)
+            ->get();
 
-        $totalRevenue = Preorder::where('status', '!=', 'cancelled')->sum('total_price');
-        $totalOrders = Preorder::count();
-        $readyAtBoothCount = Preorder::where('status', 'ready_at_booth')->count();
-        $completedCount = Preorder::where('status', 'completed')->count();
+        $creatorPreorders = fn () => Preorder::forCreator($creator);
+        $totalRevenue = $creatorPreorders()->where('status', '!=', 'cancelled')->sum('total_price');
+        $totalOrders = $creatorPreorders()->count();
+        $readyAtBoothCount = $creatorPreorders()->where('status', 'ready_at_booth')->count();
+        $completedCount = $creatorPreorders()->where('status', 'completed')->count();
         $completionRate = $totalOrders > 0 ? round(($completedCount / $totalOrders) * 100) : 0;
+        $escrowAmount = $creatorPreorders()->where('payment_status', 'paid_in_escrow')->sum('amount_paid');
+        $releasedCreatorIncome = $creatorPreorders()->where('payment_status', 'released_to_creator')->sum('net_creator_income');
+        $readyOrCompletedCount = $creatorPreorders()->whereIn('status', ['ready_at_booth', 'completed'])->count();
 
         $scannedOrder = null;
         if ($request->filled('pickup_code')) {
-            $scannedOrder = Preorder::with(['user', 'merchandise'])
+            $scannedOrder = Preorder::forCreator($creator)
+                ->with(['user', 'merchandise'])
                 ->where('preorder_code', trim($request->pickup_code))
                 ->first();
         }
@@ -118,6 +147,9 @@ class DashboardController extends Controller
             'readyAtBoothCount',
             'completedCount',
             'completionRate',
+            'escrowAmount',
+            'releasedCreatorIncome',
+            'readyOrCompletedCount',
             'scannedOrder'
         )));
     }
@@ -125,9 +157,10 @@ class DashboardController extends Controller
     // 2. HALAMAN PRE-ORDER QUEUE
     public function preorders(Request $request)
     {
-        $sidebar = $this->getSidebarData();
+        $creator = $request->user();
+        $sidebar = $this->getSidebarData($creator);
 
-        $query = Preorder::with(['user', 'merchandise.category'])->latest();
+        $query = Preorder::forCreator($creator)->with(['user', 'merchandise.category'])->latest();
 
         if ($request->filled('status') && $request->status !== 'all') {
             $query->where('status', $request->status);
@@ -144,11 +177,11 @@ class DashboardController extends Controller
         $preorders = $query->get();
 
         $counts = [
-            'all' => Preorder::count(),
-            'pending' => Preorder::where('status', 'pending')->count(),
-            'producing' => Preorder::where('status', 'producing')->count(),
-            'ready_at_booth' => Preorder::where('status', 'ready_at_booth')->count(),
-            'completed' => Preorder::where('status', 'completed')->count(),
+            'all' => Preorder::forCreator($creator)->count(),
+            'pending' => Preorder::forCreator($creator)->where('status', 'pending')->count(),
+            'producing' => Preorder::forCreator($creator)->where('status', 'producing')->count(),
+            'ready_at_booth' => Preorder::forCreator($creator)->where('status', 'ready_at_booth')->count(),
+            'completed' => Preorder::forCreator($creator)->where('status', 'completed')->count(),
         ];
 
         return view('admin.preorders', array_merge($sidebar, compact('preorders', 'counts')));
@@ -162,7 +195,7 @@ class DashboardController extends Controller
             'verification_pin' => 'nullable|string|size:6',
         ]);
 
-        $preorder = Preorder::findOrFail($id);
+        $preorder = Preorder::forCreator($request->user())->findOrFail($id);
         $newStatus = $request->status;
         $updateData = ['status' => $newStatus];
 
@@ -202,9 +235,9 @@ class DashboardController extends Controller
         return back()->with('success', "Validasi serah-terima pesanan #{$preorder->preorder_code} berhasil! Dana Escrow resmi dicairkan.");
     }
 
-    public function destroyOrder($id)
+    public function destroyOrder(Request $request, int $id)
     {
-        $preorder = Preorder::findOrFail($id);
+        $preorder = Preorder::forCreator($request->user())->findOrFail($id);
         $code = $preorder->preorder_code;
         $preorder->delete();
 
@@ -214,15 +247,17 @@ class DashboardController extends Controller
     // 3. HALAMAN MERCH & QUOTA (CRUD MERCHANDISE + FANDOM)
     public function merchandises(Request $request)
     {
-        $sidebar = $this->getSidebarData();
+        $creator = $request->user();
+        $sidebar = $this->getSidebarData($creator);
 
         $merchandises = $this->merchandisesWithProductionStats(
+            $creator,
             $request->filled('category_id') ? (int) $request->category_id : null,
         );
 
         $editMerch = null;
         if ($request->filled('edit')) {
-            $editMerch = Merchandise::find($request->edit);
+            $editMerch = Merchandise::whereBelongsTo($creator, 'creator')->findOrFail($request->edit);
         }
 
         return view('admin.merchandises', array_merge($sidebar, compact('merchandises', 'editMerch')));
@@ -246,13 +281,17 @@ class DashboardController extends Controller
     {
         $validated = $this->validateMerchandise($request);
 
-        Merchandise::create($this->withImageUpload($request, $validated));
+        Merchandise::create($this->withImageUpload($request, [
+            ...$validated,
+            'creator_id' => $request->user()->id,
+        ]));
 
         return back()->with('success', "Merchandise '{$validated['name']}' berhasil ditambahkan ke katalog!");
     }
 
     public function updateMerchandise(Request $request, Merchandise $merchandise)
     {
+        $merchandise = Merchandise::whereBelongsTo($request->user(), 'creator')->findOrFail($merchandise->id);
         $validated = $this->validateMerchandise($request, 0);
         $oldImage = $merchandise->image;
         $validated = $this->withImageUpload($request, $validated);
@@ -269,9 +308,9 @@ class DashboardController extends Controller
             ->with('success', "Merchandise '{$merchandise->name}' berhasil diperbarui.");
     }
 
-    public function destroyMerchandise($id)
+    public function destroyMerchandise(Request $request, int $id)
     {
-        $merch = Merchandise::findOrFail($id);
+        $merch = Merchandise::whereBelongsTo($request->user(), 'creator')->findOrFail($id);
         $name = $merch->name;
         $image = $merch->image;
         $merch->delete();
@@ -324,9 +363,10 @@ class DashboardController extends Controller
     // 4. HALAMAN CS SUPPORT INBOX
     public function support(Request $request)
     {
-        $sidebar = $this->getSidebarData();
+        $creator = $request->user();
+        $sidebar = $this->getSidebarData($creator);
 
-        $query = SupportMessage::with(['user', 'preorder.merchandise'])->latest();
+        $query = SupportMessage::forCreator($creator)->with(['user', 'preorder.merchandise'])->latest();
         if ($request->filled('status') && $request->status !== 'all') {
             $query->where('status', $request->status);
         }
@@ -336,13 +376,13 @@ class DashboardController extends Controller
         return view('admin.support', array_merge($sidebar, compact('tickets')));
     }
 
-    public function replySupport(Request $request, $id)
+    public function replySupport(Request $request, int $id)
     {
         $validated = $request->validate([
             'admin_reply' => 'required|string|max:1000',
         ]);
 
-        $ticket = SupportMessage::findOrFail($id);
+        $ticket = SupportMessage::forCreator($request->user())->findOrFail($id);
         $ticket->update([
             'admin_reply' => $validated['admin_reply'],
             'status' => 'resolved',
@@ -354,11 +394,11 @@ class DashboardController extends Controller
     // 5. HALAMAN SEWA BOOTH
     public function boothRentals(Request $request)
     {
-        $sidebar = $this->getSidebarData();
+        $sidebar = $this->getSidebarData($request->user());
 
-        $events = ConventionEvent::with(['booths.creator'])->latest()->get();
+        $events = ConventionEvent::with('booths')->latest()->get();
         $myRentals = BoothRental::with('event')
-            ->where('creator_id', auth()->id())
+            ->where('creator_id', $request->user()->id)
             ->latest()
             ->get();
 
@@ -381,7 +421,7 @@ class DashboardController extends Controller
 
         $booth->update([
             'invoice_number' => $invoiceNumber,
-            'creator_id' => auth()->id(),
+            'creator_id' => $request->user()->id,
             'circle_name' => $validated['circle_name'],
             'pic_name' => $validated['pic_name'],
             'whatsapp_number' => $validated['whatsapp_number'],
@@ -398,10 +438,11 @@ class DashboardController extends Controller
     // 6. RIWAYAT TRANSAKSI & BUKU KAS FINANSIAL
     public function transactions(Request $request)
     {
-        $sidebar = $this->getSidebarData();
+        $creator = $request->user();
+        $sidebar = $this->getSidebarData($creator);
 
         $boothExpenses = BoothRental::with('event')
-            ->where('creator_id', auth()->id())
+            ->where('creator_id', $creator->id)
             ->where('rental_status', 'paid_confirmed')
             ->latest()
             ->get()
@@ -419,7 +460,8 @@ class DashboardController extends Controller
                 ];
             });
 
-        $merchIncomes = Preorder::with('merchandise')
+        $merchIncomes = Preorder::forCreator($creator)
+            ->with(['merchandise', 'user'])
             ->where('payment_status', 'released_to_creator')
             ->latest()
             ->get()

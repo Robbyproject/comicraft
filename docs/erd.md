@@ -22,6 +22,7 @@ erDiagram
     }
     MERCHANDISES {
         bigint id PK
+        bigint creator_id FK
         bigint fandom_category_id FK
         string name
         enum item_type
@@ -51,6 +52,7 @@ erDiagram
     SUPPORT_MESSAGES {
         bigint id PK
         bigint user_id FK
+        bigint creator_id FK
         bigint preorder_id FK
         string subject
         text message
@@ -85,9 +87,11 @@ erDiagram
     }
 
     USERS ||--o{ PREORDERS : creates
+    USERS ||--o{ MERCHANDISES : owns
     MERCHANDISES ||--o{ PREORDERS : ordered_as
     FANDOM_CATEGORIES ||--o{ MERCHANDISES : groups
     USERS ||--o{ SUPPORT_MESSAGES : opens
+    USERS ||--o{ SUPPORT_MESSAGES : receives
     PREORDERS o|--o{ SUPPORT_MESSAGES : related_to
     CONVENTION_EVENTS ||--o{ BOOTH_RENTALS : offers
     USERS o|--o{ BOOTH_RENTALS : rents
@@ -97,10 +101,12 @@ erDiagram
 
 | Relasi | Makna |
 | --- | --- |
+| `users` 1 — N `merchandises` | Creator memiliki merchandise; produk lama dialihkan ke creator paling awal saat migrasi ownership. Jika akun creator dihapus, produk tetap ada tetapi menjadi tanpa pemilik (`nullOnDelete`). |
 | `fandom_categories` 1 — N `merchandises` | Satu kategori memiliki banyak produk; menghapus kategori menghapus produk terkait (`cascadeOnDelete`). |
 | `users` 1 — N `preorders` | Buyer dapat membuat banyak pesanan; akun yang dihapus akan menghapus pesanannya (`cascadeOnDelete`). |
 | `merchandises` 1 — N `preorders` | Produk dapat muncul di banyak pesanan; penghapusan produk menghapus pesanan terkait (`cascadeOnDelete`). |
-| `users` 1 — N `support_messages` | Buyer dapat membuat banyak tiket; tiket terhapus jika pemilik akun dihapus. |
+| `users` 1 — N `support_messages` sebagai pengirim | Buyer dapat membuat banyak tiket; tiket terhapus jika pemilik akun dihapus. |
+| `users` 1 — N `support_messages` sebagai creator tujuan | Tiket masuk hanya ke inbox creator tujuan; tiket lama terkait PO mengikuti pemilik produk, tiket umum lama dialihkan ke creator paling awal. Jika akun creator dihapus, tiket tetap ada tanpa penerima (`nullOnDelete`). |
 | `preorders` 0..1 — N `support_messages` | Tiket dapat tidak terkait pesanan; penghapusan pesanan mengosongkan `preorder_id` (`nullOnDelete`). |
 | `convention_events` 1 — N `booth_rentals` | Event memiliki daftar booth; penghapusan event menghapus booth terkait. |
 | `users` 0..1 — N `booth_rentals` | Booth bisa tersedia tanpa creator; penghapusan akun mengosongkan `creator_id`. |

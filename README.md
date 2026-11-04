@@ -45,6 +45,7 @@ erDiagram
 
     MERCHANDISES {
         bigint id PK
+        bigint creator_id FK
         bigint fandom_category_id FK
         string name
         enum item_type
@@ -75,6 +76,7 @@ erDiagram
     SUPPORT_MESSAGES {
         bigint id PK
         bigint user_id FK
+        bigint creator_id FK
         bigint preorder_id FK
         string subject
         text message
@@ -107,9 +109,11 @@ erDiagram
     }
 
     USERS ||--o{ PREORDERS : creates
+    USERS ||--o{ MERCHANDISES : owns
     MERCHANDISES ||--o{ PREORDERS : ordered_as
     FANDOM_CATEGORIES ||--o{ MERCHANDISES : groups
     USERS ||--o{ SUPPORT_MESSAGES : opens
+    USERS ||--o{ SUPPORT_MESSAGES : receives
     PREORDERS o|--o{ SUPPORT_MESSAGES : related_to
     CONVENTION_EVENTS ||--o{ BOOTH_RENTALS : offers
     USERS o|--o{ BOOTH_RENTALS : rents
@@ -153,6 +157,10 @@ flowchart TD
 | Creator | Semua akses buyer serta dashboard, CRUD merchandise/kategori, manajemen pesanan, balasan support, booking booth, dan transaksi |
 
 Route buyer memerlukan autentikasi. Route dashboard menggunakan middleware `role:creator`; buyer yang mencoba mengaksesnya akan ditolak dengan HTTP 403. Detailnya ada di [docs/roles.md](docs/roles.md).
+
+Setiap buyer hanya melihat pesanan dan tiket miliknya. Creator hanya mengelola merchandise, pesanan atas merchandise tersebut, tiket yang ditujukan kepadanya, serta booking dan transaksi booth miliknya. Katalog publik dan kategori fandom tetap digunakan bersama. Tiket yang terkait PO otomatis masuk ke creator pemilik produk; tiket umum meminta buyer memilih creator tujuan.
+
+Saat migrasi ownership pertama dijalankan, merchandise lama dan tiket umum tanpa PO dialihkan ke akun creator paling awal yang sudah ada. Tiket lama yang terkait PO diarahkan ke creator pemilik merchandise PO tersebut; pesanan mengikuti pemilik merchandise terkait.
 
 ## Akun uji coba
 

@@ -118,7 +118,12 @@ class PreorderController extends Controller
             ->with(['merchandise.category'])
             ->latest()
             ->get();
+        $supportTickets = $request->user()
+            ->supportMessages()
+            ->with('creator:id,name')
+            ->latest()
+            ->get();
 
-        return view('buyer.orders', compact('orders'));
+        return view('buyer.orders', compact('orders', 'supportTickets'));
     }
 }

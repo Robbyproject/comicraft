@@ -11,12 +11,12 @@
         <div class="my-2">
             <span class="text-[10px] text-[#010310]/50 font-bold uppercase block leading-tight">Uang Masuk di Escrow:</span>
             <p class="font-nohemi font-bold text-xl xl:text-2xl text-[#010310]">
-                Rp {{ number_format(\App\Models\Preorder::where('payment_status', 'paid_in_escrow')->sum('amount_paid'), 0, ',', '.') }}
+                Rp {{ number_format($escrowAmount, 0, ',', '.') }}
             </p>
         </div>
 
         <div class="flex items-center justify-between text-[10px] font-bold text-[#010310]/60 pt-1 border-t border-[#010310]/10">
-            <span>Total Nilai PO: Rp {{ number_format(\App\Models\Preorder::where('status', '!=', 'cancelled')->sum('total_price'), 0, ',', '.') }}</span>
+            <span>Total Nilai PO: Rp {{ number_format($totalRevenue, 0, ',', '.') }}</span>
         </div>
     </div>
 
@@ -32,12 +32,12 @@
         <div class="my-2">
             <span class="text-[10px] text-white/60 font-bold uppercase block leading-tight">Bersih Cair ke Creator:</span>
             <p class="font-nohemi font-bold text-xl xl:text-2xl text-[#23A9BD]">
-                Rp {{ number_format(\App\Models\Preorder::where('payment_status', 'released_to_creator')->sum('net_creator_income'), 0, ',', '.') }}
+                Rp {{ number_format($releasedCreatorIncome, 0, ',', '.') }}
             </p>
         </div>
 
         <div class="flex items-center justify-between text-[10px] text-white/60 pt-1 border-t border-white/15">
-            <span>Barang Siap/Selesai: {{ \App\Models\Preorder::whereIn('status', ['ready_at_booth', 'completed'])->count() }} PO</span>
+            <span>Barang Siap/Selesai: {{ $readyOrCompletedCount }} PO</span>
             <span class="text-[#23A9BD]">✓ Cair</span>
         </div>
     </div>

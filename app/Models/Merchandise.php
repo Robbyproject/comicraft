@@ -16,6 +16,7 @@ class Merchandise extends Model
     public const STATUSES_CONSUMING_QUOTA = ['pending', 'producing', 'ready_at_booth', 'completed'];
 
     protected $fillable = [
+        'creator_id',
         'fandom_category_id',
         'name',
         'item_type',
@@ -81,6 +82,11 @@ class Merchandise extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(FandomCategory::class, 'fandom_category_id');
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'creator_id');
     }
 
     public function preorders(): HasMany

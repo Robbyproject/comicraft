@@ -35,6 +35,13 @@ php artisan migrate:fresh --seed
 
 > `migrate:fresh` menghapus semua tabel pada koneksi database yang sedang aktif. Periksa environment sebelum menjalankannya dan jangan gunakan di deployment yang berisi data penting.
 
+## Data creator masih terlihat di akun lain
+
+- Pastikan migrasi terbaru sudah dijalankan dengan `php artisan migrate` pada environment yang benar.
+- Merchandise lama dan tiket umum tanpa PO dialihkan ke akun creator paling awal yang terdaftar. Tiket yang terkait PO dialihkan ke creator pemilik merchandise tersebut.
+- Pesanan mengikuti creator pemilik merchandise. Tiket baru untuk PO otomatis diarahkan ke creator produk; tiket umum meminta buyer memilih creator.
+- Jangan menjalankan `migrate:fresh` pada database deployment untuk memperbaiki ownership karena perintah itu menghapus seluruh data.
+
 ## Deployment menampilkan error Laravel
 
 - Pastikan `APP_KEY` tersedia, `APP_DEBUG=false` pada deployment publik, dan koneksi database benar.

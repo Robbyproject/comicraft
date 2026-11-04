@@ -149,6 +149,11 @@ class DatabaseSeeder extends Seeder
             'stock_quota' => 100,
         ]);
 
+        Merchandise::query()
+            ->whereNull('creator_id')
+            ->whereIn('fandom_category_id', [$blueArchive->id, $genshin->id, $frieren->id])
+            ->update(['creator_id' => $creator->id]);
+
         // ==========================================
         // 5. DATA EVENT & SEWA BOOTH
         // ==========================================

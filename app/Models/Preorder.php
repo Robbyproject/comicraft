@@ -2,8 +2,11 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Preorder extends Model
 {
@@ -28,17 +31,22 @@ class Preorder extends Model
         'notes',
     ];
 
-    public function user()
+    public function scopeForCreator(Builder $query, User $creator): Builder
+    {
+        return $query->whereHas('merchandise', fn (Builder $query) => $query->whereBelongsTo($creator, 'creator'));
+    }
+
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function merchandise()
+    public function merchandise(): BelongsTo
     {
         return $this->belongsTo(Merchandise::class);
     }
 
-    public function supportMessages()
+    public function supportMessages(): HasMany
     {
         return $this->hasMany(SupportMessage::class);
     }

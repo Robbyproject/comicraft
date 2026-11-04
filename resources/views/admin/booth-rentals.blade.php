@@ -138,7 +138,7 @@
                                         @else
                                             <div class="pt-2">
                                                 <span class="block w-full py-1.5 rounded-full bg-slate-200 text-slate-500 font-bold text-[10px] uppercase text-center">
-                                                    {{ $booth->circle_name ? 'Disewa: ' . $booth->circle_name : 'Tersewa' }}
+                                                    Tersewa
                                                 </span>
                                             </div>
                                         @endif

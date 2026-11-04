@@ -43,9 +43,9 @@
                     <label class="block text-[10px] font-bold uppercase text-[#010310]/60 mb-1">Pre-Order Terkait (opsional)</label>
                     <select name="preorder_id"
                             class="w-full px-2.5 py-1.5 rounded-xl bg-[#F8F9FA] border border-[#010310]/30 focus:border-[#23A9BD] outline-none text-[11px] font-semibold">
-                        <option value="">— Tidak terkait PO tertentu —</option>
+                        <option value="" @selected(old('preorder_id', request()->query('preorder_id')) === '')>— Tidak terkait PO tertentu —</option>
                         @forelse($preorders as $preorder)
-                            <option value="{{ $preorder->id }}" @selected(old('preorder_id') == $preorder->id)>
+                            <option value="{{ $preorder->id }}" @selected(old('preorder_id', request()->query('preorder_id')) == $preorder->id)>
                                 {{ $preorder->preorder_code }}
                             </option>
                         @empty
@@ -53,6 +53,21 @@
                         @endforelse
                     </select>
                     @error('preorder_id') <span class="text-[10px] text-rose-500">{{ $message }}</span> @enderror
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold uppercase text-[#010310]/60 mb-1">Creator Tujuan</label>
+                    <select name="creator_id"
+                            class="w-full px-2.5 py-1.5 rounded-xl bg-[#F8F9FA] border border-[#010310]/30 focus:border-[#23A9BD] outline-none text-[11px] font-semibold">
+                        <option value="">Pilih creator...</option>
+                        @foreach($creators as $creator)
+                            <option value="{{ $creator->id }}" @selected(old('creator_id', $selectedCreatorId) == $creator->id)>
+                                {{ $creator->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <p class="mt-1 text-[10px] text-[#010310]/50">Jika memilih PO, tiket otomatis dikirim ke creator pemilik produk PO tersebut.</p>
+                    @error('creator_id') <span class="text-[10px] text-rose-500">{{ $message }}</span> @enderror
                 </div>
 
                 <!-- Pesan -->
