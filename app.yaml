@@ -16,7 +16,7 @@ annotations:
     composer_enable: true
     name: out
     commands:
-      after_deploy: php artisan migrate --force
+      after_deploy: php artisan migrate --force --no-interaction
     node_build_command: npm run build
     node_install_inputs:
       - package.json
