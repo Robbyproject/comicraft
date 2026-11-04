@@ -42,6 +42,13 @@ php artisan migrate:fresh --seed
 - Pesanan mengikuti creator pemilik merchandise. Tiket baru untuk PO otomatis diarahkan ke creator produk; tiket umum meminta buyer memilih creator.
 - Jangan menjalankan `migrate:fresh` pada database deployment untuk memperbaiki ownership karena perintah itu menghapus seluruh data.
 
+## Menjalankan migrasi saat deploy ke Wasmer
+
+- `app.yaml` mengatur command Laravel `after_deploy` menjadi `php artisan migrate --force`. Wasmer menjalankan job ini sekali setelah deployment.
+- Job berjalan setelah versi baru dibuat, jadi periksa log job di Wasmer setelah setiap deployment. Jika migrasi gagal, versi baru mungkin sudah aktif tanpa skema yang diperlukan.
+- Pastikan environment Wasmer memiliki koneksi database yang benar sebelum deploy. Laravel membaca `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, dan `DB_PASSWORD`; jika hosting memberi nama database sebagai `DB_NAME`, petakan nilainya ke `DB_DATABASE`.
+- Buat backup database sebelum migrasi produksi. Jangan gunakan `migrate:fresh` pada database deployment.
+
 ## Deployment menampilkan error Laravel
 
 - Pastikan `APP_KEY` tersedia, `APP_DEBUG=false` pada deployment publik, dan koneksi database benar.
