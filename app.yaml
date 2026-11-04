@@ -9,14 +9,18 @@ jobs:
     trigger: post-deployment
     action:
       execute:
-        command: after_deploy
+        command: php
+        cli_args:
+          - /app/artisan
+          - migrate
+          - --force
+          - --no-interaction
+        timeout: 5m
 annotations:
   anybuild.run/config:
     composer_build_script: post-update-cmd
     composer_enable: true
     name: out
-    commands:
-      after_deploy: php artisan migrate --force --no-interaction
     node_build_command: npm run build
     node_install_inputs:
       - package.json
