@@ -88,11 +88,12 @@ class CatalogController extends Controller
             ],
             'midori' => [
                 'slug' => 'midori',
-                'name' => 'Midori Saiba',
-                'sub' => 'MILLENNIUM SCIENCE SCHOOL • GAME DEVELOPMENT CLUB',
-                'desc' => 'Illustrator berbakat dan gamer handal dari Game Development Club yang selalu ceria dan penuh imajinasi. Koleksi fanart eksklusif convention batch ini.',
+                'name' => 'Tanga Ibuki',
+                'sub' => 'BLUE ARCHIVE • TANGA IBUKI',
+                'desc' => 'Nikmati Live2D Tanga Ibuki dan koleksi fanart eksklusif convention batch ini.',
                 'fandom' => 'Blue Archive',
-                'keyword' => 'Midori',
+                'keyword' => 'Ibuki',
+                'legacyKeywords' => ['Midori'],
             ],
         ];
 
@@ -101,7 +102,13 @@ class CatalogController extends Controller
 
         // Ambil merchandise dari database yang namanya mengandung karakter tersebut
         $merchandises = Merchandise::with('category')
-            ->where('name', 'like', '%'.$character['keyword'].'%')
+            ->where(function (Builder $query) use ($character): void {
+                $query->where('name', 'like', '%'.$character['keyword'].'%');
+
+                foreach ($character['legacyKeywords'] ?? [] as $keyword) {
+                    $query->orWhere('name', 'like', '%'.$keyword.'%');
+                }
+            })
             ->withSum([
                 'preorders as reserved_quota' => fn ($query) => $query->whereIn('status', Merchandise::STATUSES_CONSUMING_QUOTA),
             ], 'quantity')

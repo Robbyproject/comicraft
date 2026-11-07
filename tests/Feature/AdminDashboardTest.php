@@ -25,7 +25,9 @@ class AdminDashboardTest extends TestCase
             ->get(route('admin.dashboard'))
             ->assertOk()
             ->assertSee('Operational Overview')
-            ->assertSee('Slots Left');
+            ->assertSee('Slots Left')
+            ->assertSee('Sign Out Account')
+            ->assertSee('overflow-y-auto', false);
     }
 
     public function test_creator_sees_merch_and_quota_page(): void

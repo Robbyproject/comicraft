@@ -35,6 +35,45 @@ class BuyerPreorderFlowTest extends TestCase
             ->assertSee('10 slot');
     }
 
+    public function test_buyer_can_view_character_showcase_with_responsive_live2d_frame(): void
+    {
+        $buyer = $this->createBuyer();
+
+        $this->actingAs($buyer)
+            ->get(route('character.showcase', ['character' => 'midori']))
+            ->assertOk()
+            ->assertSee('Tanga Ibuki')
+            ->assertSee('id="character-live2d"', false)
+            ->assertSee('src="'.asset('l2d/midori/index.html').'"', false)
+            ->assertSee('ResizeObserver', false)
+            ->assertSee('min-height: 100svh', false)
+            ->assertSee('* 1.12', false)
+            ->assertSee('scrollbar-width: none', false);
+    }
+
+    public function test_tanga_ibuki_showcase_keeps_matching_existing_midori_merchandise(): void
+    {
+        $buyer = $this->createBuyer();
+        $creator = $this->createCreator();
+        $category = FandomCategory::create([
+            'name' => 'Blue Archive',
+            'slug' => 'blue-archive',
+        ]);
+        $merchandise = $creator->merchandises()->create([
+            'fandom_category_id' => $category->id,
+            'name' => 'Midori Saiba Art Print',
+            'item_type' => 'art_print',
+            'price' => 45000,
+            'stock_quota' => 10,
+        ]);
+
+        $this->actingAs($buyer)
+            ->get(route('character.showcase', ['character' => 'midori']))
+            ->assertOk()
+            ->assertSee('Tanga Ibuki')
+            ->assertSee($merchandise->name);
+    }
+
     public function test_buyer_can_open_preorder_form(): void
     {
         $buyer = $this->createBuyer();

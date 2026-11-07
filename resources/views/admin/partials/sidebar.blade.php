@@ -1,5 +1,5 @@
-<aside class="w-full lg:w-56 xl:w-60 h-auto lg:h-screen lg:h-dvh p-4 sm:p-5 flex flex-col justify-between bg-white border-b lg:border-b-0 lg:border-r border-[#010310]/10 flex-shrink-0 overflow-hidden select-none">
-    <div>
+<aside class="w-full lg:w-56 xl:w-60 h-auto max-h-[46dvh] lg:h-dvh lg:max-h-dvh min-h-0 p-4 sm:p-5 flex flex-col bg-white border-b lg:border-b-0 lg:border-r border-[#010310]/10 shrink-0 overflow-hidden select-none">
+    <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain no-scrollbar">
         <!-- Logo ComiCraft -->
         <a href="{{ route('home') }}" class="inline-block mb-4">
             <img src="{{ asset('images/ComiCraft-Logo.png') }}"
@@ -110,7 +110,8 @@
     </div>
 
     <!-- Bottom Card Biru (#23A9BD) Dinamis Sesuai Booth yang Disewa -->
- <div class="mt-4 bg-[#23A9BD] border-[1.5px] border-[#010310] rounded-2xl p-3.5 text-white shadow-[2.5px_2.5px_0px_#010310]">
+ <div class="mt-3 shrink-0 border-t border-[#010310]/10 bg-white pt-3 lg:mt-auto lg:border-0 lg:bg-transparent lg:pt-3">
+ <div class="bg-[#23A9BD] border-[1.5px] border-[#010310] rounded-2xl p-3.5 text-white shadow-[2.5px_2.5px_0px_#010310]">
      @if(isset($activeBooth))
          <span class="inline-block px-2 py-0.5 rounded-full bg-white text-[#010310] text-[9px] font-extrabold uppercase mb-1">
              BOOTH #{{ $activeBooth->booth_number }}
@@ -140,5 +141,6 @@
              <span>↗</span>
          </button>
      </form>
+ </div>
  </div>
 </aside>

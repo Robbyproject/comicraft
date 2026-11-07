@@ -123,13 +123,13 @@
                     </div>
                 </a>
 
-                <!-- 4. Midori -->
+                <!-- 4. Tanga Ibuki -->
                 <a href="{{ route('character.showcase', 'midori') }}" 
                    class="group bg-white border-2 border-[#010310] rounded-2xl p-3 shadow-[3px_3px_0px_#010310] hover:-translate-y-1 hover:shadow-[5px_5px_0px_#23A9BD] transition-all flex flex-col justify-between overflow-hidden">
                     <div>
-                        <!-- Gambar Preview Midori -->
+                        <!-- Gambar Preview Tanga Ibuki -->
                         <div class="w-full h-28 rounded-xl border border-[#010310] overflow-hidden mb-2.5 bg-slate-100 relative">
-                            <img src="{{ asset('l2d/midori/preview.gif') }}" alt="Midori Saiba" 
+                            <img src="{{ asset('l2d/midori/preview.gif') }}" alt="Tanga Ibuki"
                                  class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300">
                             <!-- Logo Blue Archive Murni Mengambang Transparan -->
                             <img src="{{ asset('blue-archive-seeklogo.svg') }}" alt="Blue Archive" 
@@ -137,9 +137,9 @@
                                  onerror="this.src='{{ asset('blue-archive-seeklogo.png') }}'">
                         </div>
                         <h3 class="font-nohemi font-bold text-sm text-[#010310] group-hover:text-[#23A9BD] transition-colors leading-tight">
-                            Midori Saiba
+                            Tanga Ibuki
                         </h3>
-                        <p class="text-[11px] text-[#010310]/60 mt-0.5 line-clamp-1">Game Development Club</p>
+                        <p class="text-[11px] text-[#010310]/60 mt-0.5 line-clamp-1">Blue Archive</p>
                     </div>
                     <div class="mt-2.5 pt-2 border-t border-[#010310]/10 flex items-center justify-between text-[11px] font-extrabold text-[#23A9BD]">
                         <span>Buka Live2D</span>
